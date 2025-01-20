@@ -43,7 +43,7 @@ class CanMsg:
 class CAN_1:
     ERROR = ERROR
     def __init__(self, board: str = "CANBed_RP2040", spi: int = 0, spics: int = 9):
-        self.can = CAN(SPI(cs=9))
+        self.can = CAN(SPI(cs=spics))
     def begin(self, bitrate: int = CAN_SPEED.CAN_500KBPS, canclock: int = CAN_CLOCK.MCP_16MHZ, mode: str = 'normal'):
         ret = self.can.reset()
         if ret != ERROR.ERROR_OK:
@@ -53,6 +53,22 @@ class CAN_1:
             return ret
         ret = self.can.setNormalMode()
         return ret
+    def setLoopback(self):
+        return self.can.setLoopbackMode()
+    def clearInterrupts(self):
+        self.can.clearInterrupts()
+    def getInterrupts(self):
+        return self.can.getInterrupts()
+    def getInterruptMask(self):
+        return self.can.getInterruptMask()
+    def getErrorFlags(self):
+        return self.can.getErrorFlags()
+    def clearErrorFlags(self,RXERR=False):
+        # Keyword args for clearing more conditions in future if required, e.g.
+        # TXBO, passive errors, warnings
+        if RXERR: self.can.clearRXnOVRFlags()
+    def getStatus(self):
+        return self.can.getStatus()
     def init_mask(self, mask, is_ext_id, mask_id):
         ret = self.can.setFilterMask(mask + 1, is_ext_id, mask_id)
         if ret != ERROR.ERROR_OK:
@@ -70,7 +86,7 @@ class CAN_1:
     def recv(self):
         error, frame = self.can.readMessage()
         msg = CanMsg()
-        msg._set_frame(frame)
+        if frame is not None: msg._set_frame(frame)
         return error, msg
     def send(self, msg):
         frame = msg._get_frame()
